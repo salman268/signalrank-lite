@@ -7,7 +7,7 @@ from datetime import datetime
 # ── Page config ────────────────────────────────────────────────────────────────
 # layout="wide" gives us more horizontal space for the results section.
 # The dark theme is set in .streamlit/config.toml — I prefer doing it
-# there rather than calling st.markdown() CSS hacks, which feel fragile.
+
 st.set_page_config(
     page_title="SignalRank Lite",
     page_icon="📡",
@@ -21,23 +21,22 @@ HISTORY_FILE = "history.csv"
 SERPAPI_KEY = os.environ.get("SERPAPI_KEY", "")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # MATCHING LOGIC
 #
 # This was the trickiest part to get right. My first version just did a
-# simple substring check — "kfc" in title — which worked for obvious cases
-# but kept failing on real brands. The problems I hit:
-#
+# simple substring check "kfc" in title which worked for obvious cases
+# but kept failing on real brands. The problems I hit
+
 # 1. "Starbucks" doesn't appear in "starbucks.com.my" unless you lowercase both
 # 2. "Mixue" doesn't appear in "Mixue Ice Cream & Tea" (it does, but only
 #    after lowercasing consistently)
 # 3. Multi-word names like "Secret Recipe" could match on just "Secret" which
-#    is risky — but in practice it's fine because we're already in a branded
+#    is risky  but in practice it's fine because we're already in a branded
 #    keyword context
 #
-# My fix: two-pass matching. Full name first (fast, precise), then word-level
+# My fix wAS two-pass matching. Full name first (fast, precise), then word-level
 # (catches partial brand names in longer titles/URLs).
-# ══════════════════════════════════════════════════════════════════════════════
 
 def name_matches(business_name: str, title: str, snippet: str, link: str) -> bool:
     """
@@ -65,7 +64,7 @@ def name_matches(business_name: str, title: str, snippet: str, link: str) -> boo
     return False
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # SERP FETCHING
 #
 # num=30 covers 3 pages of Google results. I tried 50 but SerpApi's
@@ -75,7 +74,7 @@ def name_matches(business_name: str, title: str, snippet: str, link: str) -> boo
 # gl="my" + hl="en" was a crucial addition. Without geo-targeting, searches
 # like "best coffee KL" returned results for the UK or US which makes no
 # sense for a Malaysian business visibility tool.
-# ══════════════════════════════════════════════════════════════════════════════
+
 
 def fetch_serp_data(keyword: str, api_key: str, num_results: int = 30) -> dict:
     """
@@ -118,12 +117,12 @@ def find_business_in_results(business_name: str, organic: list) -> dict:
     return {"found": False, "position": None}
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # SCORING ALGORITHM
 #
 # I wanted the score to feel meaningful, not just a linear rank number.
 # Real CTR data shows a steep cliff from rank 1 → 3 → 10, then it
-# basically flatlines. So my tiers reflect that:
+# basically flatlines. So my tiers reflect that
 #
 #   Rank 1:    100  (the single best position)
 #   Rank 2-3:  90-95 (still excellent, top of page)
@@ -131,7 +130,7 @@ def find_business_in_results(business_name: str, organic: list) -> dict:
 #   Rank 11-20: 41-68 (page 2, most users never reach here)
 #   Rank 21-30: 11-38 (page 3, functionally invisible)
 #   Not found:  0
-# ══════════════════════════════════════════════════════════════════════════════
+
 
 def calculate_score(position: int | None) -> tuple[int, str, str]:
     """Returns (score, label, colour_emoji)."""
@@ -151,17 +150,17 @@ def calculate_score(position: int | None) -> tuple[int, str, str]:
         return 0, "Invisible", "🔴"
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SUGGESTIONS ENGINE
-#
+
+# SUGGESTIONS
+
 # After building the score display I realised just showing a number isn't
 # enough — a business owner's next question is always "okay so what do I
 # do about it?" So I wrote a rule-based suggestion generator.
 #
-# I deliberately kept this as pure if/else rather than calling the AI API
+# I  kept this as pure if/else rather than calling the AI API
 # because: (a) it's explainable, (b) it's free, (c) I can reason about
 # exactly what advice gets shown and why. No black box.
-# ══════════════════════════════════════════════════════════════════════════════
+
 
 def generate_suggestions(business: str, keyword: str, position: int | None) -> list[str]:
     """Tier-based actionable recommendations. More urgent as rank drops."""
@@ -209,8 +208,8 @@ def generate_suggestions(business: str, keyword: str, position: int | None) -> l
         ]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# HISTORY — CSV via pandas
+
+# HISTORY CSV via pandas
 #
 # I chose CSV over a proper database for this version. The reasoning:
 # - No backend infra needed
@@ -218,7 +217,7 @@ def generate_suggestions(business: str, keyword: str, position: int | None) -> l
 # - Perfectly fine for single-user usage
 # - If this scaled to multi-user I'd migrate to Supabase or PostgreSQL,
 #   but that's a future version problem
-# ══════════════════════════════════════════════════════════════════════════════
+
 
 def load_history() -> pd.DataFrame:
     if os.path.exists(HISTORY_FILE):
@@ -239,9 +238,9 @@ def save_to_history(business: str, keyword: str, position, score: int, label: st
     pd.concat([row, df], ignore_index=True).to_csv(HISTORY_FILE, index=False)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # SIDEBAR
-# ══════════════════════════════════════════════════════════════════════════════
+
 
 st.sidebar.title("📡 SignalRank Lite")
 st.sidebar.markdown("Real-time Google search visibility checker for local businesses.")
@@ -269,13 +268,13 @@ st.sidebar.markdown("---")
 st.sidebar.caption("Scores are calculated using a weighted rank algorithm based on real CTR data — not AI-generated.")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # PAGE 1 — ANALYZER
-# ══════════════════════════════════════════════════════════════════════════════
+
 
 if page == "🔍 Analyzer":
 
-    # Hero section — gives first-time users context immediately
+    # gives first-time users context immediately
     st.title("📡 SignalRank Lite")
     st.markdown("### Check how visible any business is on Google — in real time.")
     st.markdown(
@@ -422,9 +421,8 @@ rank #3 gets ~10%, rank #10 gets under 2%.
             st.error(f"Unexpected error: {e}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # PAGE 2 — HISTORY DASHBOARD
-# ══════════════════════════════════════════════════════════════════════════════
 
 elif page == "📊 History Dashboard":
     st.title("📊 Tracking Dashboard")
@@ -463,7 +461,7 @@ elif page == "📊 History Dashboard":
             st.caption("Track the same keyword weekly to measure whether your SEO efforts are working.")
 
         # ── Weakest keywords ─────────────────────────────────────────────────
-        # Quick view of where a business is most vulnerable — saves scanning the table
+        # Quick view of where a business is most vulnerable  saves scanning the table
         if selected != "All":
             st.markdown(f"**⚠️ Keywords needing most attention — {selected}**")
             worst = filtered.copy()
