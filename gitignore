@@ -1,0 +1,13 @@
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# History data (don't commit personal searches)
+history.csv
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# OS
+.DS_Store
