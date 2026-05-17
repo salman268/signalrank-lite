@@ -6,7 +6,7 @@ from datetime import datetime
 
 # ── Page config ────────────────────────────────────────────────────────────────
 # layout="wide" gives us more horizontal space for the results section.
-# The dark theme is set in .streamlit/config.toml — I prefer doing it
+# The dark theme is set in .streamlit/config.toml prefer doing it
 
 st.set_page_config(
     page_title="SignalRank Lite",
